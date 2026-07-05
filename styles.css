@@ -1,0 +1,168 @@
+/* ============================================================================
+ * styles.css — all UI styling (modern menu, cards, sliders, editor, overlays)
+ * Organised top-to-bottom: variables → base → screens → menu → grids →
+ * builder → settings → editor → HUD → touch controls → overlays.
+ * ==========================================================================*/
+
+/* Design tokens (colours/spacing) reused everywhere via var(--x). */
+:root{
+  --bg1:#0b1020; --bg2:#131a33; --accent:#34c759; --accent2:#2b6cff;
+  --warn:#ff5a5a; --panel:rgba(12,18,38,.82); --text:#eef2ff; --muted:#9aa6c8;
+  --card:#1a2240; --line:rgba(255,255,255,.10);
+}
+/* Reset + full-height, no scroll, no text selection (game-like). */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg1);
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text);
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#game{position:fixed;inset:0;width:100vw;height:100vh;display:block;touch-action:none;background:#bfe8ff}
+.hidden{display:none!important}
+
+/* ---------- Screens ---------- */
+#screens{position:fixed;inset:0;z-index:10}
+/* Only the active screen is displayed (flex column). */
+.screen{position:absolute;inset:0;display:none;flex-direction:column;
+  background:linear-gradient(160deg,var(--bg1),var(--bg2));overflow:hidden}
+.screen.active{display:flex}
+.bar{display:flex;align-items:center;gap:10px;padding:14px 16px;
+  background:rgba(0,0,0,.25);border-bottom:1px solid var(--line);backdrop-filter:blur(6px)}
+.bar h2{font-size:18px;font-weight:800;flex:1}
+.back{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);
+  background:rgba(255,255,255,.06);color:#fff;font-size:20px;cursor:pointer}
+.back:active{transform:scale(.94)}
+.bar-actions{display:flex;gap:8px}
+
+/* ---------- Main menu ---------- */
+#screen-menu{background:#0b1020}
+.menu-bg{position:absolute;inset:0;
+  background:
+    radial-gradient(120% 80% at 50% -10%, #2b6cff33, transparent 60%),
+    linear-gradient(180deg,#0b1020,#10204a 60%,#0a1330);
+  animation:hue 14s linear infinite}
+@keyframes hue{0%{filter:hue-rotate(0)}100%{filter:hue-rotate(40deg)}}
+.menu-inner{position:relative;z-index:2;margin:auto;text-align:center;padding:24px;max-width:520px;width:100%}
+.logo{font-size:64px;font-weight:900;letter-spacing:2px;line-height:.95;
+  text-shadow:0 6px 30px #2b6cff66}
+.logo span{display:block;color:var(--accent);text-shadow:0 6px 30px #34c75966}
+.tagline{color:var(--muted);margin:10px 0 28px;font-size:16px}
+.menu-buttons{display:flex;flex-direction:column;gap:14px;max-width:320px;margin:0 auto}
+.menuBtn{padding:16px;border-radius:16px;border:1px solid var(--line);
+  background:rgba(255,255,255,.05);color:#fff;font-size:18px;font-weight:800;
+  cursor:pointer;transition:transform .06s,background .15s;backdrop-filter:blur(4px)}
+.menuBtn:hover{background:rgba(255,255,255,.10)}
+.menuBtn:active{transform:scale(.97)}
+.menuBtn.primary{background:linear-gradient(90deg,#34c759,#2bd4c7);color:#06210f;border:none;
+  box-shadow:0 8px 24px #34c75944}
+.menu-footer{display:flex;justify-content:center;gap:20px;margin-top:28px;color:var(--muted);font-size:14px}
+.menu-footer .ver{opacity:.5}
+
+/* ---------- Grids (track/garage/editor cards) ---------- */
+.grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:14px;padding:16px;align-content:start}
+.cardItem{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;
+  cursor:pointer;transition:transform .06s,border-color .15s}
+.cardItem:active{transform:scale(.97)}
+.cardItem:hover{border-color:var(--accent2)}
+.cardItem canvas{display:block;width:100%;height:84px;background:#0e1733}
+.cardItem .meta{padding:8px 10px}
+.cardItem .meta .name{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cardItem .meta .sub{font-size:12px;color:var(--muted);display:flex;justify-content:space-between;margin-top:2px}
+.stars{color:#ffd24d;letter-spacing:1px}
+.empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:40px}
+
+/* ---------- Builder ---------- */
+.builder-wrap{flex:1;display:flex;min-height:0}
+.preview-col{width:300px;flex:none;border-right:1px solid var(--line);display:flex;flex-direction:column;
+  padding:14px;gap:10px;overflow-y:auto;background:rgba(0,0,0,.18)}
+#builderPreview{width:100%;height:180px;background:#0e1733;border-radius:14px;border:1px solid var(--line)}
+.preview-tip{font-size:12px;color:var(--muted);text-align:center}
+.controls-col{flex:1;overflow-y:auto;padding:14px 18px}
+.group{margin-bottom:18px}
+.group h3{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px}
+.field{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.field label{flex:0 0 120px;font-size:13px}
+.field input[type=range]{flex:1;accent-color:var(--accent)}
+.field .val{flex:0 0 64px;text-align:right;font-variant-numeric:tabular-nums;font-size:13px;color:var(--accent)}
+.field select,.field input[type=color]{flex:1;background:#0e1733;color:#fff;border:1px solid var(--line);
+  border-radius:8px;padding:6px}
+.field input[type=color]{height:34px;padding:2px}
+.stats-bars{display:flex;flex-direction:column;gap:6px}
+.stat-row{display:flex;align-items:center;gap:8px;font-size:12px}
+.stat-row span{width:96px;color:var(--muted)}
+.stat-track{flex:1;height:8px;background:rgba(255,255,255,.1);border-radius:6px;overflow:hidden}
+.stat-fill{height:100%;width:0;background:linear-gradient(90deg,#34c759,#2bd4c7);transition:width .15s}
+
+/* ---------- Buttons (shared) ---------- */
+.miniBtn{padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.06);
+  color:#fff;font-weight:700;font-size:13px;cursor:pointer}
+.miniBtn:active{transform:scale(.95)}
+.miniBtn.primary{background:var(--accent);color:#06210f;border:none}
+.miniBtn.danger{background:var(--warn);color:#fff;border:none}
+.miniBtn.ghost{background:transparent}
+.miniSelect{background:#0e1733;color:#fff;border:1px solid var(--line);border-radius:8px;padding:6px}
+.builder-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+input[type=text]{background:#0e1733;color:#fff;border:1px solid var(--line);border-radius:8px;padding:8px;flex:1}
+.row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+
+/* ---------- Settings ---------- */
+.settings-col{flex:1;overflow-y:auto;padding:18px;max-width:560px;width:100%;margin:0 auto}
+.setRow{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px;border:1px solid var(--line);border-radius:14px;margin-bottom:12px;background:rgba(255,255,255,.03)}
+.setRow .lbl{font-weight:700}
+.setRow .desc{font-size:12px;color:var(--muted)}
+.setRow input[type=range]{width:160px;accent-color:var(--accent)}
+.toggle{width:52px;height:30px;border-radius:16px;background:rgba(255,255,255,.15);position:relative;cursor:pointer;border:none}
+.toggle.on{background:var(--accent)}
+.toggle::after{content:"";position:absolute;width:24px;height:24px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .15s}
+.toggle.on::after{left:25px}
+
+/* ---------- Editor ---------- */
+.editor-wrap{flex:1;display:flex;flex-direction:column;min-height:0}
+#editorCanvas{flex:1;display:block;background:#0e1733;touch-action:none;cursor:crosshair}
+.tools{display:flex;flex-wrap:wrap;gap:8px;padding:12px;background:rgba(0,0,0,.3);border-top:1px solid var(--line);align-items:center}
+.tool{padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:#fff;font-size:13px;cursor:pointer;font-weight:600}
+.tool.active{background:var(--accent2);border-color:var(--accent2)}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;inset:0;z-index:8;pointer-events:none}
+.panel{position:absolute;padding:8px 12px;border-radius:12px;background:var(--panel);color:#fff;backdrop-filter:blur(4px);font-weight:700}
+#topLeft{top:14px;left:14px;min-width:190px}
+#topRight{top:14px;right:14px;text-align:right}
+.stat{font-size:15px;line-height:1.5}
+.stat small{opacity:.7;font-weight:600}
+#fuelWrap{margin-top:6px;width:170px;height:14px;border-radius:8px;background:rgba(255,255,255,.18);overflow:hidden}
+#fuelBar{height:100%;width:100%;background:linear-gradient(90deg,#36d97b,#ffe14d,#ff5a5a);transition:width .08s linear}
+.iconBtn{position:absolute;top:14px;left:50%;transform:translateX(-50%);pointer-events:auto;
+  width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:#fff;font-size:18px;cursor:pointer}
+
+/* ---------- Touch controls ---------- */
+/* NOTE: base is display:flex so .hidden can hide it; the media query hides it
+   on hover/fine-pointer (desktop) devices automatically. */
+#controls{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-between;padding:18px;pointer-events:none;z-index:9}
+.btn{pointer-events:auto;width:110px;height:110px;border-radius:50%;border:none;color:#fff;font-size:16px;font-weight:800;
+  box-shadow:0 6px 16px rgba(0,0,0,.35)}
+.btn:active{transform:scale(.94);filter:brightness(1.1)}
+#brakeBtn{background:radial-gradient(circle at 30% 30%,#ff7a7a,#d12b2b)}
+#gasBtn{background:radial-gradient(circle at 30% 30%,#79e08a,#1f9c3a)}
+@media (hover:hover) and (pointer:fine){#controls{display:none!important}}
+
+/* ---------- Overlays (pause / results) ---------- */
+.overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+  background:rgba(8,12,28,.74);backdrop-filter:blur(3px)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:28px;text-align:center;
+  max-width:420px;width:90%;display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.card h1{font-size:32px}
+.card p{color:var(--muted);line-height:1.6}
+.card .big{color:#ffe14d;font-weight:800}
+.playBtn{padding:14px 28px;border:none;border-radius:40px;font-size:18px;font-weight:800;color:#06210f;cursor:pointer;
+  background:linear-gradient(90deg,#7ef0a0,#34c759);box-shadow:0 8px 20px rgba(0,0,0,.4)}
+.playBtn.ghost{background:transparent;color:#fff;border:1px solid var(--line);box-shadow:none}
+.playBtn:active{transform:scale(.96)}
+
+/* Stack builder/editor vertically on narrow screens. */
+@media (max-width:720px){
+  .builder-wrap{flex-direction:column}
+  .preview-col{width:100%;border-right:none;border-bottom:1px solid var(--line);flex-direction:row;flex-wrap:wrap}
+  #builderPreview{width:160px;height:140px;flex:none}
+  .logo{font-size:48px}
+}

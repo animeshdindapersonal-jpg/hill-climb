@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Hill Climb — Garage & Tracks</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<!--
+  index.html — DOM skeleton only. All behaviour lives in js/*.js.
+  Load order matters: physics → terrain → storage → audio → render →
+  garage → editor → main. main.js boots last and wires everything together.
+-->
+<body>
+  <!-- In-game canvas: always present behind the screen layer; the game draws here. -->
+  <canvas id="game"></canvas>
+
+  <!-- In-game HUD: distance/coins/fuel + pause button (only visible while playing). -->
+  <div id="hud" class="hidden">
+    <div class="panel" id="topLeft">
+      <div class="stat"><small>DISTANCE</small><br><span id="distVal">0</span> m</div>
+      <div id="fuelWrap"><div id="fuelBar"></div></div>
+    </div>
+    <div class="panel" id="topRight">
+      <div class="stat"><small>COINS</small><br><span id="coinVal">0</span></div>
+      <div class="stat"><small>BEST</small><br><span id="bestVal">0</span> m</div>
+    </div>
+    <button id="pauseBtn" class="iconBtn">⏸</button>
+  </div>
+
+  <!-- Touch controls (on-screen gas/brake). Hidden on desktop / when showTouch is off. -->
+  <div id="controls" class="hidden">
+    <button class="btn" id="brakeBtn">BRAKE</button>
+    <button class="btn" id="gasBtn">GAS</button>
+  </div>
+
+  <!-- SCREEN LAYER: every menu/overlay screen is one <section class="screen">. -->
+  <div id="screens">
+
+    <!-- MAIN MENU -->
+    <section id="screen-menu" class="screen active">
+      <div class="menu-bg"></div>
+      <div class="menu-inner">
+        <h1 class="logo">HILL<span>CLIMB</span></h1>
+        <p class="tagline">Build your ride. Conquer 100 tracks. Make your own.</p>
+        <!-- data-action is handled by main.js's global click delegation -->
+        <div class="menu-buttons">
+          <button class="menuBtn primary" data-action="play">▶ PLAY</button>
+          <button class="menuBtn" data-action="garage">🔧 GARAGE</button>
+          <button class="menuBtn" data-action="editor">🗺 TERRAIN EDITOR</button>
+          <button class="menuBtn" data-action="settings">⚙ SETTINGS</button>
+        </div>
+        <div class="menu-footer">
+          <span>🪙 <b id="menuCoins">0</b></span>
+          <span>🏁 Best <b id="menuBest">0</b> m</span>
+          <span class="ver">v2.0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- PLAY / TRACK SELECT (built-ins + custom tracks) -->
+    <section id="screen-play" class="screen">
+      <header class="bar">
+        <button class="back" data-action="back">←</button>
+        <h2>Select Track</h2>
+        <div class="bar-actions">
+          <select id="trackSort" class="miniSelect">
+            <option value="index">Default</option>
+            <option value="diff">Difficulty</option>
+            <option value="best">My Best</option>
+          </select>
+        </div>
+      </header>
+      <div id="trackGrid" class="grid"></div>
+    </section>
+
+    <!-- GARAGE HOME (list of saved cars) -->
+    <section id="screen-garage" class="screen">
+      <header class="bar">
+        <button class="back" data-action="back">←</button>
+        <h2>Garage</h2>
+        <div class="bar-actions"><button class="miniBtn" data-action="newCar">+ New</button></div>
+      </header>
+      <div id="garageGrid" class="grid"></div>
+    </section>
+
+    <!-- CAR BUILDER (sliders + live preview + stats) -->
+    <section id="screen-builder" class="screen">
+      <header class="bar">
+        <button class="back" data-action="back">←</button>
+        <h2 id="builderTitle">Build Car</h2>
+        <div class="bar-actions">
+          <button class="miniBtn" id="builderTest">Test</button>
+          <button class="miniBtn primary" id="builderSave">Save</button>
+        </div>
+      </header>
+      <div class="builder-wrap">
+        <div class="preview-col">
+          <canvas id="builderPreview"></canvas>
+          <div class="preview-tip">Tap GAS to test the suspension</div>
+          <div id="builderStats" class="stats-bars"></div>
+          <div class="builder-actions">
+            <button class="miniBtn" id="builderSaveAs">Save As</button>
+            <button class="miniBtn danger" id="builderDelete">Delete</button>
+            <button class="miniBtn" id="builderActive">Set Active</button>
+          </div>
+        </div>
+        <div id="builderControls" class="controls-col"></div>
+      </div>
+    </section>
+
+    <!-- EDITOR LIST (custom tracks) -->
+    <section id="screen-editorList" class="screen">
+      <header class="bar">
+        <button class="back" data-action="back">←</button>
+        <h2>My Terrains</h2>
+        <div class="bar-actions"><button class="miniBtn" id="editorNew">+ New</button></div>
+      </header>
+      <div id="editorGrid" class="grid"></div>
+    </section>
+
+    <!-- TERRAIN EDITOR (brushes, coins, start/finish) -->
+    <section id="screen-editor" class="screen">
+      <header class="bar">
+        <button class="back" data-action="back">←</button>
+        <h2 id="editorTitle">Editor</h2>
+        <div class="bar-actions">
+          <button class="miniBtn" id="editorTest">Test</button>
+          <button class="miniBtn primary" id="editorSave">Save</button>
+        </div>
+      </header>
+      <div class="editor-wrap">
+        <canvas id="editorCanvas"></canvas>
+        <div id="editorTools" class="tools"></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="screen-settings" class="screen">
+      <header class="bar">
+        <button class="back" data-action="back">←</button>
+        <h2>Settings</h2>
+      </header>
+      <div id="settingsControls" class="settings-col"></div>
+    </section>
+
+  </div>
+
+  <!-- PAUSE OVERLAY -->
+  <div id="overlay-pause" class="overlay hidden">
+    <div class="card">
+      <h1>Paused</h1>
+      <button class="playBtn" data-action="resume">Resume</button>
+      <button class="playBtn ghost" data-action="restart">Restart</button>
+      <button class="playBtn ghost" data-action="quit">Quit to Menu</button>
+    </div>
+  </div>
+
+  <!-- RESULTS OVERLAY (shown on crash) -->
+  <div id="overlay-results" class="overlay hidden">
+    <div class="card">
+      <h1 id="resultsTitle">Crashed!</h1>
+      <p>You traveled <span class="big" id="finalDist">0</span> m and grabbed <span class="big" id="finalCoins">0</span> coins.</p>
+      <!-- NOTE: id="resultsNext" (not a class) — main.js looks this up by id. -->
+      <button class="playBtn" data-action="retry">Retry</button>
+      <button class="playBtn ghost" id="resultsNext" data-action="next">Next Track</button>
+      <button class="playBtn ghost" data-action="quit">Menu</button>
+    </div>
+  </div>
+
+  <!-- Scripts: plain (non-module) so the game also runs from file:// -->
+  <script src="js/physics.js"></script>
+  <script src="js/terrain.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/garage.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
